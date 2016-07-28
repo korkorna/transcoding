@@ -6,18 +6,20 @@ import java.util.List;
 public class Job {
 
 	public static enum State {
-		MEDIASOURCECOPYING, COMPLETED, TRANSCODING, THUMNAILEXTRACTING, CREATEDFILESENDING, NOTIFING
+		MEDIASOURCECOPYING, COMPLETED, TRANSCODING, THUMNAILEXTRACTING, STORING, NOTIFING
 	}
 	
 	private Long id;
 	private State state = null;
 	private Exception occurredException = null;
 	private MediaSourceFile mediaSourceFile;
-	
-	public Job(Long id, MediaSourceFile mediaSourceFile) {
+	private DestinationStorage destinationStorage;
+
+	public Job(Long id, MediaSourceFile mediaSourceFile, DestinationStorage destinationStorage) {
 		super();
 		this.id = id;
 		this.mediaSourceFile = mediaSourceFile;
+		this.destinationStorage = destinationStorage;
 	}
 
 	public boolean isSuccess() {
@@ -62,58 +64,61 @@ public class Job {
 	
 	public void transcode(Transcoder transcoder,
 			ThumnailExtractor thumnailExtractor,
-			CreatedFileSender createdFileSender,
 			JobResultNotifier jobResultNotifier) {
 		try {
 			//미디어 원본으로 부터 파일을 로컬에 복사한다.
-			changeState(Job.State.MEDIASOURCECOPYING);
 			File multimediaFile = copyMultimediaSourceTolocal();
 			
 			//로컬에 복사된 파일을 변환처리한다.
-			changeState(Job.State.TRANSCODING);
 			List<File> multimediaFiles = transcode(multimediaFile, transcoder);
 			
 			//로컬에 복사된 파일로 부터 이미지를 추출한다.
-			changeState(Job.State.THUMNAILEXTRACTING);
 			List<File> thumnails = extractThumnail(multimediaFile, thumnailExtractor);
 			
 			//변환된 결과 파일과 썸네일 이미지를 목적지에 저장
-			changeState(Job.State.CREATEDFILESENDING);
-			sendCreatedFileToDestination(multimediaFiles, thumnails, createdFileSender);
+			sendCreatedFileToDestination(multimediaFiles, thumnails);
 			
 			//결과를 통지
-			changeState(Job.State.NOTIFING);
 			notifyJobResultToRequester(jobResultNotifier);
 			
-			changeState(Job.State.COMPLETED);
+			completed();
 		} catch(RuntimeException e) {
 			exceptionOccurred(e);
 			throw e;
 		}
 	}
 
+	private void completed() {
+		changeState(Job.State.COMPLETED);
+	}
+	
 	private void notifyJobResultToRequester(JobResultNotifier jobResultNotifier) {
 		// TODO Auto-generated method stub
+		changeState(Job.State.NOTIFING);
 		jobResultNotifier.notifyToRequester(id);
 	}
 
-	private void sendCreatedFileToDestination(List<File> multimediaFiles, List<File> thumnails, CreatedFileSender createdFileSender) {
+	private void sendCreatedFileToDestination(List<File> multimediaFiles, List<File> thumnails) {
 		// TODO Auto-generated method stub
-		createdFileSender.send(multimediaFiles, thumnails, id);
+		changeState(Job.State.STORING);
+		destinationStorage.save(multimediaFiles, thumnails);
 	}
 
 	private List<File> extractThumnail(File multimediaFile, ThumnailExtractor thumnailExtractor) {
 		// TODO Auto-generated method stub
+		changeState(Job.State.THUMNAILEXTRACTING);
 		return thumnailExtractor.extract(multimediaFile, id);
 	}
 
 	private List<File> transcode(File multimediaFile, Transcoder transcoder) {
 		// TODO Auto-generated method stub
+		changeState(Job.State.TRANSCODING);
 		return transcoder.transcode(multimediaFile, id);
 	}
 
 	private File copyMultimediaSourceTolocal() {
 		// TODO Auto-generated method stub
+		changeState(Job.State.MEDIASOURCECOPYING);
 		return mediaSourceFile.getSourceFile();
 	}
 }
