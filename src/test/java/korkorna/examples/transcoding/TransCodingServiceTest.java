@@ -1,7 +1,21 @@
 package korkorna.examples.transcoding;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyListOf;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.only;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -11,10 +25,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.mockito.stubbing.Answer;
-import org.mockito.stubbing.OngoingStubbing;
 
 import korkorna.examples.transcoding.Job.State;
 
@@ -22,9 +33,9 @@ import korkorna.examples.transcoding.Job.State;
 public class TransCodingServiceTest {
 
 	private Long jobId = new Long(1);
-
+	
 	@Mock
-	private MediaSourceCopier mediaSourceCopier;
+	private MediaSourceFile mediaSourceFile;
 	@Mock
 	private Transcoder transcoder;
 	@Mock
@@ -35,12 +46,8 @@ public class TransCodingServiceTest {
 	private JobResultNotifier jobResultNotifier;
 	@Mock
 	private JobRepository jobRepository;
-	@Mock
-	private JobStateChanger jobStateChanger;
-	@Mock
-	private TranscodingExceptionHandler transcodingExceptionHandler;
 
-	private Job mockJob = new Job();
+	private Job mockJob;
 	private File mockMultimediaFile = mock(File.class);
 	private List<File> mockMultimediaFiles = new ArrayList<File>();
 	private List<File> mockThumnailFiles = new ArrayList<File>();
@@ -51,34 +58,17 @@ public class TransCodingServiceTest {
 
 	@Before
 	public void setUp() {
-		trancdoingService = new TranscodingServiceImpl(mediaSourceCopier, transcoder, thumnailExtractor,
-				createdFileSender, jobResultNotifier, jobStateChanger, transcodingExceptionHandler);
-
+		mockJob = new Job(jobId, mediaSourceFile);
+		
+		trancdoingService = new TranscodingServiceImpl(transcoder, thumnailExtractor,
+				createdFileSender, jobResultNotifier, jobRepository);
+		
 		when(jobRepository.findById(jobId)).thenReturn(mockJob);
 
-		when(mediaSourceCopier.copy(jobId)).thenReturn(mockMultimediaFile);
+		when(mediaSourceFile.getSourceFile()).thenReturn(mockMultimediaFile);
 		when(transcoder.transcode(mockMultimediaFile, jobId)).thenReturn(mockMultimediaFiles);
 		when(thumnailExtractor.extract(mockMultimediaFile, jobId)).thenReturn(mockThumnailFiles);
 		
-		doAnswer(new Answer<Object>() {
-
-			public Object answer(InvocationOnMock invocation) throws Throwable {
-				// TODO Auto-generated method stub
-				Job.State newState = (State) invocation.getArguments()[1];
-				mockJob.changeState(newState);
-				return null;
-			}
-		}).when(jobStateChanger).changeJobState(anyLong(), any(Job.State.class));
-		
-		doAnswer(new Answer<Object>() {
-
-			public Object answer(InvocationOnMock invocation) throws Throwable {
-				// TODO Auto-generated method stub
-				RuntimeException e = (RuntimeException) invocation.getArguments()[1];
-				mockJob.exceptionOccurred(e);
-				return null;
-			}
-		}).when(transcodingExceptionHandler).notifiyToJob(anyLong(), any(RuntimeException.class));
 	}
 
 	@Test
@@ -103,7 +93,7 @@ public class TransCodingServiceTest {
 
 	@Test
 	public void transcodeFailBecauseExceptionOccuredAtMediaSourceCopier() {
-		when(mediaSourceCopier.copy(jobId)).thenThrow(mockException);
+		when(mediaSourceFile.getSourceFile()).thenThrow(mockException);
 
 		assertJobIsWaitingState();
 		executeFailingTranscodeAndAssertFail(Job.State.MEDIASOURCECOPYING);
@@ -205,8 +195,6 @@ public class TransCodingServiceTest {
 	
 	
 	private void verifyCollaboration(VerifyOption verifyOption) {
-		verify(mediaSourceCopier, only()).copy(jobId);
-		
 		if (verifyOption.transcoderNever) {
 			verify(transcoder, never()).transcode(any(File.class), anyLong());
 		} else {
