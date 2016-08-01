@@ -7,4 +7,6 @@ public interface Transcoder {
 
 	List<File> transcode(File multimediaFile, Long jobId);
 
+	List<File> transcode(File multisourceFile, List<OutputFormat> outputFormats);
+
 }
