@@ -32,6 +32,7 @@ public class VideoFormatVerifier {
 	private void verify() {
 		// TODO Auto-generated method stub
 		try {
+			assertExtention();
 			makeContainer();
 			extractMetainfoOfVideo();
 			assertVideoFile();
@@ -39,6 +40,20 @@ public class VideoFormatVerifier {
 			// TODO: handle exception
 			closeContainer();
 		}
+	}
+
+	private void assertExtention() {
+		// TODO Auto-generated method stub
+		System.out.println(expectedFormat.getFileExtension() + " "  + fileExtenstion());
+		assertEquals(expectedFormat.getFileExtension(), fileExtenstion());
+	}
+
+	private String fileExtenstion() {
+		// TODO Auto-generated method stub
+		String filePath = videoFile.getAbsolutePath();
+		int lastDotIdx = filePath.lastIndexOf(".");
+		String extension = filePath.substring(lastDotIdx+1);
+		return extension;
 	}
 
 	private void closeContainer() {

@@ -26,7 +26,7 @@ public class FfmpegTranscoder implements Transcoder {
 	private File transcode(File sourceFile, OutputFormat format) {
 		IMediaReader reader = ToolFactory.makeReader(sourceFile.getAbsolutePath());
 		
-		String outputFile = "outputFile.mp4"; // 테스트를 통과하기 위한 코딩
+		String outputFile = getFileName(format);//"outputFile.mp4"; // 테스트를 통과하기 위한 코딩
 		
 		VideoConverter converter = new VideoConverter(outputFile, reader, format);
 		reader.addListener(converter);
@@ -37,6 +37,11 @@ public class FfmpegTranscoder implements Transcoder {
 		}
 		
 		return new File(outputFile);
+	}
+
+	private String getFileName(OutputFormat format) {
+		// TODO Auto-generated method stub
+		return "outputFile." + format.getFileExtension();
 	}
 
 }

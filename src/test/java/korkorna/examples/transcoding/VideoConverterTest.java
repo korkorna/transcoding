@@ -18,7 +18,7 @@ public class VideoConverterTest {
 	public void transcode() {
 		IMediaReader reader = ToolFactory.makeReader(SOURCE_FILE);
 
-		OutputFormat outputFormat = new OutputFormat(WIDTH, HEIGHT, BITRATE, VideoCodec.H264, AudioCodec.AAC);
+		OutputFormat outputFormat = new OutputFormat(WIDTH, HEIGHT, BITRATE, Container.MP4, VideoCodec.H264, AudioCodec.AAC);
 		
 		VideoConverter writer = new VideoConverter(TRANSCODED_FILE, reader, outputFormat);
 		reader.addListener(writer);

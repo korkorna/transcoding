@@ -23,60 +23,41 @@ public class FfmpegTranscoderTest {
     private static final String TRANSCODED_FILE = "target/sample.mp4";
 	
 	private Transcoder transcorder;
+	private File multimediaFile;
+	private List<OutputFormat> outputFormats;
+	
+	private OutputFormat mp4Format;
+	private OutputFormat aviFormat;
 	
 	@Before
 	public void setup() {
+		outputFormats = new ArrayList<OutputFormat>();
+		mp4Format = new OutputFormat(WIDTH, HEIGHT, BITRATE, Container.MP4, VideoCodec.H264, AudioCodec.AAC);
+		aviFormat = new OutputFormat(WIDTH, HEIGHT, BITRATE, Container.AVI, VideoCodec.MPEG4, AudioCodec.MP3);
+		multimediaFile = new File(SOURCE_FILE);
+		
 		transcorder = new FfmpegTranscoder();
 	}
 	
 	@Test
-	public void transcodeWithOnfOutputFormat() {
-		File multisourceFile = new File(SOURCE_FILE);
-		List<OutputFormat> outputFormats = new ArrayList<OutputFormat>();
-		outputFormats.add(new OutputFormat(WIDTH, HEIGHT, BITRATE, VideoCodec.H264, AudioCodec.AAC));
-		List<File> transcodedFiles = transcorder.transcode(multisourceFile, outputFormats);
+	public void transcodeWithOneMp4OutputFormat() {
+		outputFormats.add(mp4Format);
+		executeTranscoderAndAssert();
+	}
+	
+	@Test
+	public void transcodeWithOneAviOutputFormat() {
+		outputFormats.add(aviFormat);
+		executeTranscoderAndAssert();
+	}
+	
+	private void executeTranscoderAndAssert() {
+		// TODO Auto-generated method stub
+		List<File> transcodedFiles = transcorder.transcode(multimediaFile, outputFormats);
 		assertEquals(1, transcodedFiles.size());
 		assertTrue(transcodedFiles.get(0).exists());
 		
 		VideoFormatVerifier.verifyVideoFormat(outputFormats.get(0), transcodedFiles.get(0));
 	}
 
-	private void verifyTranscodedFile(OutputFormat outputFormat, File file) {
-		// TODO Auto-generated method stub
-		IContainer container = IContainer.make();
-		int openResult = container.open(file.getAbsolutePath(), IContainer.Type.READ, null);
-		
-		if (openResult < 0) {
-			throw new RuntimeException("Xuggler file open failed " + openResult);
-		}
-		
-		int numStreams = container.getNumStreams();
-		
-		int width = 0;
-		int height = 0;
-		ICodec.ID videoCodec = null;
-		ICodec.ID audioCodec = null;
-		
-		for (int i = 0; i < numStreams; i++) {
-			IStream stream = container.getStream(i);
-			IStreamCoder coder = stream.getStreamCoder();
-			
-			if (coder.getCodecType() == ICodec.Type.CODEC_TYPE_AUDIO) {
-				audioCodec = coder.getCodecID();
-			} else if (coder.getCodecType() == ICodec.Type.CODEC_TYPE_VIDEO) {
-				videoCodec = coder.getCodecID();
-				width = coder.getWidth();
-				height = coder.getHeight();
-			}
-		}
-		
-		container.close();
-		
-		assertEquals(outputFormat.getWidth(), width);
-		assertEquals(outputFormat.getHeight(), height);
-		assertEquals(outputFormat.getVideoCodec(), videoCodec.toString());
-		assertEquals(outputFormat.getAudioCodec(), audioCodec.toString());
-		
-	}
-	
 }

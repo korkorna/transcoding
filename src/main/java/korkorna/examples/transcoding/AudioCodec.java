@@ -1,6 +1,6 @@
 package korkorna.examples.transcoding;
 
 public enum AudioCodec {
-	AAC
+	AAC, MP3
 
 }
