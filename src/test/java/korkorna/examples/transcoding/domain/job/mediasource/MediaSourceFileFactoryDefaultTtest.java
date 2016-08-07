@@ -1,14 +1,15 @@
-package korkorna.examples.transcoding.domain.job;
+package korkorna.examples.transcoding.domain.job.mediasource;
 
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.only;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import korkorna.examples.transcoding.domain.job.LocalStorageMediaSourceFile;
+import korkorna.examples.transcoding.domain.job.MediaSourceFile;
+import korkorna.examples.transcoding.domain.job.MediaSourceFileFactory;
+import korkorna.examples.transcoding.domain.job.mediasource.DefaultMediaSourceFileFactory;
 
 public class MediaSourceFileFactoryDefaultTtest {
 	
@@ -16,7 +17,7 @@ public class MediaSourceFileFactoryDefaultTtest {
 
 	@Before
 	public void setup() {
-		factory = MediaSourceFileFactory.DEFAULT;
+		factory = new DefaultMediaSourceFileFactory();
 	}
 	
 	@Test
