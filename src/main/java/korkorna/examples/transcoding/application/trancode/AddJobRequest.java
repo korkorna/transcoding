@@ -34,5 +34,11 @@ public class AddJobRequest {
 	public void setResultCallback(String resultCallback) {
 		this.resultCallback = resultCallback;
 	}
+
+	@Override
+	public String toString() {
+		return "AddJobRequest [mediaSource=" + mediaSource + ", destinationStorage=" + destinationStorage
+				+ ", outputFormats=" + outputFormats + ", resultCallback=" + resultCallback + "]";
+	}
 	
 }

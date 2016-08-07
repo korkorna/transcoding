@@ -1,5 +1,8 @@
 package korkorna.examples.transcoding.application.trancode;
 
+import org.slf4j.LoggerFactory;
+
+import ch.qos.logback.classic.Logger;
 import korkorna.examples.transcoding.domain.job.DestinationStorage;
 import korkorna.examples.transcoding.domain.job.DestinationStorageFactory;
 import korkorna.examples.transcoding.domain.job.Job;
@@ -10,6 +13,8 @@ import korkorna.examples.transcoding.domain.job.ResultCallback;
 
 public class AddJobServiceImpl implements AddJobService{
 
+	private Logger logger = LoggerFactory.getLogger(getClass());
+	
 	private MediaSourceFileFactory mediaSourceFileFactory;
 	private DestinationStorageFactory destinationStorageFactory;
 	private ResultCallbackFactory resultCallbackFactory;
@@ -32,16 +37,28 @@ public class AddJobServiceImpl implements AddJobService{
 	}
 
 	private Job createJob(AddJobRequest request) {
-		//Job 생성
-		MediaSourceFile mediaSourceFile = mediaSourceFileFactory.create(request.getMediaSource());
-		DestinationStorage destinationStorage = destinationStorageFactory.create(request.getDestinationStorage());
-		ResultCallback resultCallback = resultCallbackFactory.create(request.getResultCallback());
-		return new Job(mediaSourceFile, destinationStorage, resultCallback, request.getOutputFormats());
+		try {
+			//Job 생성
+			MediaSourceFile mediaSourceFile = mediaSourceFileFactory.create(request.getMediaSource());
+			DestinationStorage destinationStorage = destinationStorageFactory.create(request.getDestinationStorage());
+			ResultCallback resultCallback = resultCallbackFactory.create(request.getResultCallback());
+			return new Job(mediaSourceFile, destinationStorage, resultCallback, request.getOutputFormats());
+		} catch (Exception e) {
+			// TODO: handle exception
+			logger.error("fail to create job from request {}", request, e);
+			throw e;
+		}
 	}
 
 	private Job saveJob(Job job) {
-		//Job 저장.
-		return jobRepository.save(job);
+		try {
+			//Job 저장
+			return jobRepository.save(job);
+		} catch (Exception e) {
+			// TODO: handle exception
+			logger.error("fail to save job to repository", e);
+			throw e;
+		}
 	}
 
 }
