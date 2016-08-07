@@ -7,7 +7,7 @@ import java.util.List;
 public class Job {
 
 	public static enum State {
-		MEDIASOURCECOPYING, COMPLETED, TRANSCODING, THUMNAILEXTRACTING, STORING, NOTIFING, WAITING
+		CREATED, WAITING, MEDIASOURCECOPYING, TRANSCODING, THUMNAILEXTRACTING, STORING, NOTIFING, COMPLETED
 	}
 
 	private Long id;
@@ -26,7 +26,7 @@ public class Job {
 		this.destinationStorage = destinationStorage;
 		this.callback = callback;
 		this.outputFormats = outputFormats;
-		state = Job.State.WAITING;
+		state = Job.State.CREATED;
 	}
 
 	public Job(MediaSourceFile mediaSourceFile, DestinationStorage destinationStorage,

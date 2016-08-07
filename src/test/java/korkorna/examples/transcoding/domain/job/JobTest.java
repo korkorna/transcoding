@@ -19,8 +19,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import korkorna.examples.transcoding.domain.job.Job.State;
-
 @RunWith(MockitoJUnitRunner.class)
 public class JobTest {
 
@@ -42,8 +40,8 @@ public class JobTest {
 	public void jobShouldBeCreatedStateWhenCreated() {
 		Job job = new Job(jobId , mediaSourceFile, destinationStorage, callback, outputFormats);
 		
-		assertEquals(Job.State.WAITING, job.getLastState());
-		assertTrue(job.isWaiting());
+		assertEquals(Job.State.CREATED, job.getLastState());
+//		assertTrue(job.isWaiting());
 		assertFalse(job.isFinished());
 		assertFalse(job.isSuccess());
 		assertFalse(job.isExceptionOccurred());
