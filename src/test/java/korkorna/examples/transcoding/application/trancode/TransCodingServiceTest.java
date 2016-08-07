@@ -27,17 +27,15 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import korkorna.examples.transcoding.application.trancode.TranscodingService;
-import korkorna.examples.transcoding.application.trancode.TranscodingServiceImpl;
 import korkorna.examples.transcoding.domain.job.DestinationStorage;
 import korkorna.examples.transcoding.domain.job.Job;
+import korkorna.examples.transcoding.domain.job.Job.State;
 import korkorna.examples.transcoding.domain.job.JobRepository;
-import korkorna.examples.transcoding.domain.job.JobResultNotifier;
 import korkorna.examples.transcoding.domain.job.MediaSourceFile;
 import korkorna.examples.transcoding.domain.job.OutputFormat;
+import korkorna.examples.transcoding.domain.job.ResultCallback;
 import korkorna.examples.transcoding.domain.job.ThumnailExtractor;
 import korkorna.examples.transcoding.domain.job.Transcoder;
-import korkorna.examples.transcoding.domain.job.Job.State;
 
 @RunWith(MockitoJUnitRunner.class)
 public class TransCodingServiceTest {
@@ -49,11 +47,11 @@ public class TransCodingServiceTest {
 	@Mock
 	private DestinationStorage destinationStorage;
 	@Mock
+	private ResultCallback callback;
+	@Mock
 	private Transcoder transcoder;
 	@Mock
 	private ThumnailExtractor thumnailExtractor;
-	@Mock
-	private JobResultNotifier jobResultNotifier;
 	@Mock
 	private JobRepository jobRepository;
 	@Mock
@@ -63,22 +61,22 @@ public class TransCodingServiceTest {
 	private File mockMultimediaFile = mock(File.class);
 	private List<File> mockMultimediaFiles = new ArrayList<File>();
 	private List<File> mockThumnailFiles = new ArrayList<File>();
-	private RuntimeException mockException = new RuntimeException();
+	private RuntimeException mockException = new RuntimeException("error ");
 
 	private TranscodingService trancdoingService;
 
 
 	@Before
 	public void setUp() {
-		mockJob = new Job(jobId, mediaSourceFile, destinationStorage, outputForamts);
+		mockJob = new Job(jobId, mediaSourceFile, destinationStorage, callback, outputForamts);
 		
 		trancdoingService = new TranscodingServiceImpl(transcoder, thumnailExtractor,
-				jobResultNotifier, jobRepository);
+				jobRepository);
 		
 		when(jobRepository.findById(jobId)).thenReturn(mockJob);
 
 		when(mediaSourceFile.getSourceFile()).thenReturn(mockMultimediaFile);
-		when(transcoder.transcode(mockMultimediaFile, jobId)).thenReturn(mockMultimediaFiles);
+		when(transcoder.transcode(mockMultimediaFile, outputForamts)).thenReturn(mockMultimediaFiles);
 		when(thumnailExtractor.extract(mockMultimediaFile, jobId)).thenReturn(mockThumnailFiles);
 		
 	}
@@ -92,13 +90,12 @@ public class TransCodingServiceTest {
 		assertTrue(job.isFinished());
 		assertTrue(job.isSuccess());
 		assertEquals(Job.State.COMPLETED, job.getLastState());
-		assertNull(job.getOccurredException());
+		assertNull(job.getExceptionMessage());
 
 		CollaborationVerifier collaborationVerifier = new CollaborationVerifier();
 		collaborationVerifier.transcoderNever = false;
 		collaborationVerifier.thumbnailExtractorNever = false;
 		collaborationVerifier.destinationStorageNever = false;
-		collaborationVerifier.jobResultNotifierNever = false;
 		
 		collaborationVerifier.verifyCollaboration(collaborationVerifier);
 	}
@@ -114,14 +111,13 @@ public class TransCodingServiceTest {
 		collaborationVerifier.transcoderNever = true;
 		collaborationVerifier.thumbnailExtractorNever = true;
 		collaborationVerifier.destinationStorageNever = true;
-		collaborationVerifier.jobResultNotifierNever = true;
 		
 		collaborationVerifier.verifyCollaboration(collaborationVerifier);
 	}
 	
 	@Test
 	public void trnascodeFailBecauseExceptionOccuredAtTranscoder() {
-		when(transcoder.transcode(any(File.class), anyLong())).thenThrow(mockException);
+		when(transcoder.transcode(any(File.class), anyListOf(OutputFormat.class))).thenThrow(mockException);
 
 		assertJobIsWaitingState();
 		executeFailingTranscodeAndAssertFail(Job.State.TRANSCODING);
@@ -130,7 +126,6 @@ public class TransCodingServiceTest {
 		collaborationVerifier.transcoderNever = false;
 		collaborationVerifier.thumbnailExtractorNever = true;
 		collaborationVerifier.destinationStorageNever = true;
-		collaborationVerifier.jobResultNotifierNever = true;
 		
 		collaborationVerifier.verifyCollaboration(collaborationVerifier);
 	}
@@ -146,7 +141,6 @@ public class TransCodingServiceTest {
 		collaborationVerifier.transcoderNever = false;
 		collaborationVerifier.thumbnailExtractorNever = false;
 		collaborationVerifier.destinationStorageNever = true;
-		collaborationVerifier.jobResultNotifierNever = true;
 		
 		collaborationVerifier.verifyCollaboration(collaborationVerifier);
 	}
@@ -162,23 +156,6 @@ public class TransCodingServiceTest {
 		collaborationVerifier.transcoderNever = false;
 		collaborationVerifier.thumbnailExtractorNever = false;
 		collaborationVerifier.destinationStorageNever = false;
-		collaborationVerifier.jobResultNotifierNever = true;
-		
-		collaborationVerifier.verifyCollaboration(collaborationVerifier);
-	}
-	
-	@Test
-	public void transcodeFailBecauseExceptionOccuredAtJobResultNotifier() {
-		doThrow(mockException).when(jobResultNotifier).notifyToRequester(anyLong());
-
-		assertJobIsWaitingState();
-		executeFailingTranscodeAndAssertFail(Job.State.NOTIFING);
-
-		CollaborationVerifier collaborationVerifier = new CollaborationVerifier();
-		collaborationVerifier.transcoderNever = false;
-		collaborationVerifier.thumbnailExtractorNever = false;
-		collaborationVerifier.destinationStorageNever = false;
-		collaborationVerifier.jobResultNotifierNever = false;
 		
 		collaborationVerifier.verifyCollaboration(collaborationVerifier);
 	}
@@ -202,7 +179,7 @@ public class TransCodingServiceTest {
 		assertTrue(job.isFinished());
 		assertFalse(job.isSuccess());
 		assertEquals(executeState, job.getLastState());
-		assertNotNull(job.getOccurredException());
+		assertNotNull(job.getExceptionMessage());
 	}
 	
 	
@@ -214,9 +191,9 @@ public class TransCodingServiceTest {
 		
 		public void verifyCollaboration(CollaborationVerifier collaborationVerifier) {
 			if (this.transcoderNever) {
-				verify(transcoder, never()).transcode(any(File.class), anyLong());
+				verify(transcoder, never()).transcode(any(File.class), anyListOf(OutputFormat.class));
 			} else {
-				verify(transcoder, only()).transcode(any(File.class), anyLong());
+				verify(transcoder, only()).transcode(any(File.class), anyListOf(OutputFormat.class));
 			}
 			
 			if (this.thumbnailExtractorNever) {
@@ -231,11 +208,6 @@ public class TransCodingServiceTest {
 				verify(destinationStorage, only()).save(anyListOf(File.class), anyListOf(File.class));
 			}
 			
-			if (this.jobResultNotifierNever) {
-				verify(jobResultNotifier, never()).notifyToRequester(anyLong());
-			} else {
-				verify(jobResultNotifier, only()).notifyToRequester(anyLong());
-			}
 		}
 	}
 

@@ -12,25 +12,27 @@ public class Job {
 
 	private Long id;
 	private State state = null;
-	private Exception occurredException = null;
 	private MediaSourceFile mediaSourceFile;
 	private DestinationStorage destinationStorage;
+	private ResultCallback callback;
 	private List<OutputFormat> outputFormats;
+	private String exceptionMessage;
 
 	public Job(Long id, MediaSourceFile mediaSourceFile, DestinationStorage destinationStorage
-			, List<OutputFormat> outputFormats) {
+			, ResultCallback callback, List<OutputFormat> outputFormats) {
 		super();
 		this.id = id;
 		this.mediaSourceFile = mediaSourceFile;
 		this.destinationStorage = destinationStorage;
+		this.callback = callback;
 		this.outputFormats = outputFormats;
 		state = Job.State.WAITING;
 	}
 
 	public Job(MediaSourceFile mediaSourceFile, DestinationStorage destinationStorage,
-			List<OutputFormat> outputFormats) {
+			ResultCallback callback, List<OutputFormat> outputFormats) {
 		// TODO Auto-generated constructor stub
-		this(null, mediaSourceFile, destinationStorage, outputFormats);
+		this(null, mediaSourceFile, destinationStorage, callback, outputFormats);
 	}
 
 	public boolean isSuccess() {
@@ -60,21 +62,21 @@ public class Job {
 
 	public boolean isExceptionOccurred() {
 		// TODO Auto-generated method stub
-		return occurredException != null;
+		return exceptionMessage != null;
 	}
 
-	public Exception getOccurredException() {
+	public String getExceptionMessage() {
 		// TODO Auto-generated method stub
-		return occurredException;
+		return exceptionMessage;
 	}
 
 	private void exceptionOccurred(RuntimeException e) {
 		// TODO Auto-generated method stub
-		occurredException = e;
+		exceptionMessage = e.getMessage();
+		callback.notifyFailedResult(id, state, exceptionMessage);
 	}
 
-	public void transcode(Transcoder transcoder, ThumnailExtractor thumnailExtractor,
-			JobResultNotifier jobResultNotifier) {
+	public void transcode(Transcoder transcoder, ThumnailExtractor thumnailExtractor) {
 		try {
 			// 미디어 원본으로 부터 파일을 로컬에 복사한다.
 			File multimediaFile = copyMultimediaSourceTolocal();
@@ -89,7 +91,7 @@ public class Job {
 			storeCreatedFilesToStorage(multimediaFiles, thumnails);
 
 			// 결과를 통지
-			notifyJobResultToRequester(jobResultNotifier);
+			notifyJobResultToRequest();
 
 			completed();
 		} catch (RuntimeException e) {
@@ -98,14 +100,14 @@ public class Job {
 		}
 	}
 
-	private void completed() {
-		changeState(Job.State.COMPLETED);
-	}
-
-	private void notifyJobResultToRequester(JobResultNotifier jobResultNotifier) {
+	private void notifyJobResultToRequest() {
 		// TODO Auto-generated method stub
 		changeState(Job.State.NOTIFING);
-		jobResultNotifier.notifyToRequester(id);
+		callback.notifySurccessResult(id);
+	}
+
+	private void completed() {
+		changeState(Job.State.COMPLETED);
 	}
 
 	private void storeCreatedFilesToStorage(List<File> multimediaFiles, List<File> thumnails) {

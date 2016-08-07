@@ -30,17 +30,17 @@ public class JobTest {
 	@Mock
 	private DestinationStorage destinationStorage;
 	@Mock
+	private ResultCallback callback;
+	@Mock
 	private List<OutputFormat> outputFormats;
 	@Mock
 	private Transcoder transcoder;
 	@Mock
 	private ThumnailExtractor thumnailExtractor;
-	@Mock
-	private JobResultNotifier jobResultNotifier;
 
 	@Test
 	public void jobShouldBeCreatedStateWhenCreated() {
-		Job job = new Job(jobId , mediaSourceFile, destinationStorage, outputFormats);
+		Job job = new Job(jobId , mediaSourceFile, destinationStorage, callback, outputFormats);
 		
 		assertEquals(Job.State.WAITING, job.getLastState());
 		assertTrue(job.isWaiting());
@@ -51,9 +51,9 @@ public class JobTest {
 	
 	@Test
 	public void transcodeSuccessfully() {
-		Job job = new Job(jobId, mediaSourceFile, destinationStorage, outputFormats);
+		Job job = new Job(jobId, mediaSourceFile, destinationStorage, callback, outputFormats);
 		
-		job.transcode(transcoder, thumnailExtractor, jobResultNotifier);
+		job.transcode(transcoder, thumnailExtractor);
 		
 		assertEquals(Job.State.COMPLETED, job.getLastState());
 		assertTrue(job.isFinished());
@@ -61,17 +61,17 @@ public class JobTest {
 		
 		verify(mediaSourceFile, only()).getSourceFile();
 		verify(destinationStorage, only()).save(anyListOf(File.class), anyListOf(File.class));
-		verify(jobResultNotifier, only()).notifyToRequester(anyLong());
+		verify(callback, only()).notifySurccessResult(anyLong());
 	}
 	
 	@Test
 	public void jobShouldThrowExceptionWhenFailGetSourceFile() {
-		RuntimeException mockException = new RuntimeException();
+		RuntimeException mockException = new RuntimeException("exception");
 		when(mediaSourceFile.getSourceFile()).thenThrow(mockException);
 		
-		Job job = new Job(jobId, mediaSourceFile, destinationStorage, outputFormats);
+		Job job = new Job(jobId, mediaSourceFile, destinationStorage, callback, outputFormats);
 		try {
-			job.transcode(transcoder, thumnailExtractor, jobResultNotifier);
+			job.transcode(transcoder, thumnailExtractor);
 			fail("발생해야함.");
 		} catch (Exception e) {
 			// TODO: handle exception
@@ -83,6 +83,7 @@ public class JobTest {
 		
 		verify(mediaSourceFile, only()).getSourceFile();
 		verify(destinationStorage, never()).save(anyListOf(File.class), anyListOf(File.class));
-		verify(jobResultNotifier, never()).notifyToRequester(anyLong());
+		verify(callback, only())
+			.notifyFailedResult(jobId, Job.State.MEDIASOURCECOPYING, "exception");
 	}
 }

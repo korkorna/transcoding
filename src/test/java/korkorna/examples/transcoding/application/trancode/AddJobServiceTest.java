@@ -19,6 +19,7 @@ import korkorna.examples.transcoding.domain.job.Job;
 import korkorna.examples.transcoding.domain.job.JobRepository;
 import korkorna.examples.transcoding.domain.job.MediaSourceFile;
 import korkorna.examples.transcoding.domain.job.MediaSourceFileFactory;
+import korkorna.examples.transcoding.domain.job.ResultCallback;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AddJobServiceTest {
@@ -33,12 +34,16 @@ public class AddJobServiceTest {
 	private DestinationStorage mockDestinationStorage;
 	@Mock
 	private JobRepository jobRepository;
+	@Mock
+	private ResultCallbackFactory resultCallbackFactory;
+	@Mock
+	private ResultCallback mockResultCallback;
 	
 	private AddJobService addJobService;
 	
 	@Before
 	public void setup() {
-		addJobService = new AddJobServiceImpl(mediaSourceFileFactory, destinationStorageFactory, jobRepository);
+		addJobService = new AddJobServiceImpl(mediaSourceFileFactory, destinationStorageFactory, resultCallbackFactory, jobRepository);
 	}
 
 	@Test
@@ -49,6 +54,8 @@ public class AddJobServiceTest {
 			.thenReturn(mockMediaSourceFile);
 		when(destinationStorageFactory.create(request.getDestinationStorage()))
 			.thenReturn(mockDestinationStorage);
+		when(resultCallbackFactory.create(request.getResultCallback()))
+			.thenReturn(mockResultCallback);
 		
 		final Long mockJobId = 1L;
 		Job mockSavedJob = mock(Job.class);
