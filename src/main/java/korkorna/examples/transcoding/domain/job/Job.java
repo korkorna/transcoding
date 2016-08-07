@@ -1,6 +1,7 @@
 package korkorna.examples.transcoding.domain.job;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.List;
 
 public class Job {
@@ -24,6 +25,12 @@ public class Job {
 		this.destinationStorage = destinationStorage;
 		this.outputFormats = outputFormats;
 		state = Job.State.WAITING;
+	}
+
+	public Job(MediaSourceFile mediaSourceFile, DestinationStorage destinationStorage,
+			List<OutputFormat> outputFormats) {
+		// TODO Auto-generated constructor stub
+		this(null, mediaSourceFile, destinationStorage, outputFormats);
 	}
 
 	public boolean isSuccess() {
@@ -123,5 +130,14 @@ public class Job {
 		// TODO Auto-generated method stub
 		changeState(Job.State.MEDIASOURCECOPYING);
 		return mediaSourceFile.getSourceFile();
+	}
+
+	public Long getId() {
+		// TODO Auto-generated method stub
+		return id;
+	}
+	
+	public List<OutputFormat> getOutputFormats() {
+		return Collections.unmodifiableList(outputFormats);
 	}
 }
