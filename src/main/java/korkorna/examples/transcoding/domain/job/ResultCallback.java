@@ -2,9 +2,20 @@ package korkorna.examples.transcoding.domain.job;
 
 import korkorna.examples.transcoding.domain.job.Job.State;
 
-public interface ResultCallback {
+public abstract class ResultCallback {
 	
-	void notifyFailedResult(long anyLong, State mediasourcecopying, String string);
+	private String url;
+	
+	public ResultCallback(String url) {
+		super();
+		this.url = url;
+	}
 
-	void notifySurccessResult(long anyLong);
+	public String getUrl() {
+		return url;
+	}
+	
+	public abstract void notifyFailedResult(long anyLong, State mediasourcecopying, String string);
+
+	public abstract void notifySurccessResult(long anyLong);
 }

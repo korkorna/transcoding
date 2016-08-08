@@ -5,26 +5,21 @@ import java.io.BufferedOutputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.ClosedDirectoryStreamException;
 import java.util.List;
 
-public class FileDestinationStorage implements DestinationStorage{
+public class FileDestinationStorage extends DestinationStorage{
 
-	private String directory;
-	
-	public FileDestinationStorage(String directory) {
-		super();
-		this.directory = directory;
+	public FileDestinationStorage(String url) {
+		super(url);
 	}
 
 	public void save(List<File> multimediaFiles, List<File> thumnails) {
 		// TODO Auto-generated method stub
 		try {
-			copy(multimediaFiles, directory);
-			copy(thumnails, directory);
+			copy(multimediaFiles, getUrl());
+			copy(thumnails, getUrl());
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

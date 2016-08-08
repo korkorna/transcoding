@@ -1,6 +1,7 @@
 package korkorna.examples.transcoding.domain.job;
 
 import java.io.File;
+import java.rmi.server.ExportException;
 import java.util.Collections;
 import java.util.List;
 
@@ -45,7 +46,7 @@ public class Job {
 		return this.state;
 	}
 
-	private void changeState(State newState) {
+	protected void changeState(State newState) {
 		// TODO Auto-generated method stub
 		this.state = newState;
 	}
@@ -141,5 +142,26 @@ public class Job {
 	
 	public List<OutputFormat> getOutputFormats() {
 		return Collections.unmodifiableList(outputFormats);
+	}
+
+	public Exporter export(Exporter exporter) {
+		exporter.addId(id);
+		exporter.addState(state);
+		exporter.addMediaSource(mediaSourceFile.getUrl());
+		exporter.addDestinationStorage(destinationStorage.getUrl());
+		exporter.addResultCallback(callback.getUrl());
+		exporter.addOutputFormat(getOutputFormats());
+		exporter.addExceptionMessage(exceptionMessage);
+		return exporter;
+	}
+	
+	public static interface Exporter {
+		public void addId(Long id);
+		public void addState(Job.State state);
+		public void addMediaSource(String url);
+		public void addDestinationStorage(String url);
+		public void addResultCallback(String url);
+		public void addExceptionMessage(String exceptionMessage);
+		public void addOutputFormat(List<OutputFormat> outputFormat);
 	}
 }

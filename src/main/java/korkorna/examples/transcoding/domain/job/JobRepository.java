@@ -6,6 +6,4 @@ public interface JobRepository {
 
 	Job save(Job job);
 
-	Job findEldestJobOfWaitingState();
-
 }

@@ -15,14 +15,14 @@ public class DestinationStorageFactoryDefaultTest {
 	private DestinationStorageFactory factory = new DefaultDestinationStorageFactory();
 
 	@Test
-	public void createFileDestinationStorage() {
+	public void shouldCreateFileDestinationStorage() {
 		DestinationStorage destinationStorage = factory.create("file://./src/test/resources");
 		
 		assertTrue(destinationStorage instanceof FileDestinationStorage);
 	}
 	
 	@Test(expected = IllegalArgumentException.class)
-	public void createNotSupportedStorage() {
+	public void shouldThrowExceptionWhenUrlIsNotSupprted() {
 		DestinationStorage destinationStorage = factory.create("ftp://www.google.com");
 		fail("must throw exception");
 	}
