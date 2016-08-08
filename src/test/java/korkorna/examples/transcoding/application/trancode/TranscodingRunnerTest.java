@@ -1,10 +1,5 @@
 package korkorna.examples.transcoding.application.trancode;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.only;
@@ -18,7 +13,6 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import korkorna.examples.transcoding.domain.job.Job;
-import korkorna.examples.transcoding.domain.job.JobRepository;
 
 @RunWith(MockitoJUnitRunner.class)
 public class TranscodingRunnerTest {
@@ -26,20 +20,21 @@ public class TranscodingRunnerTest {
 	@Mock
 	private Job job;
 	@Mock
-	private JobRepository jobRepository;
+	private TranscodingService transcodingService;
+	@Mock
+	private JobQueue jobQueue;
 	
 	private TranscodingRunner runner;
-	private TranscodingService transcodingService;
 	
 	@Before
 	public void setup() {
-		runner = new TranscodingRunner();
+		runner = new TranscodingRunner(transcodingService, jobQueue);
 	}
 	
 	@Test
 	public void runTranscodingWhenJobIsExists() {
 		when(job.getId()).thenReturn(1L);
-		when(jobRepository.findEldestJobOfCreatedState()).thenReturn(job);
+		when(jobQueue.nextJobId()).thenReturn(job.getId());
 		
 		runner.run();
 		
@@ -48,7 +43,7 @@ public class TranscodingRunnerTest {
 	
 	@Test
 	public void dontRunTranscodingWhenJobIsNotExists() {
-		when(jobRepository.findEldestJobOfCreatedState()).thenReturn(null);
+		when(jobQueue.nextJobId()).thenReturn(null);
 		
 		runner.run();
 		

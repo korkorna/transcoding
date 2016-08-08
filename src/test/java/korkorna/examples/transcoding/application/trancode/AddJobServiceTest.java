@@ -38,12 +38,14 @@ public class AddJobServiceTest {
 	private ResultCallbackFactory resultCallbackFactory;
 	@Mock
 	private ResultCallback mockResultCallback;
+	@Mock
+	private JobQueue jobQueue;
 	
 	private AddJobService addJobService;
 	
 	@Before
 	public void setup() {
-		addJobService = new AddJobServiceImpl(mediaSourceFileFactory, destinationStorageFactory, resultCallbackFactory, jobRepository);
+		addJobService = new AddJobServiceImpl(mediaSourceFileFactory, destinationStorageFactory, resultCallbackFactory, jobRepository, jobQueue);
 	}
 
 	@Test

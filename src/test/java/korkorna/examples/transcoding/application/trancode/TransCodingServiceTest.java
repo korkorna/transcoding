@@ -61,7 +61,7 @@ public class TransCodingServiceTest {
 	private File mockMultimediaFile = mock(File.class);
 	private List<File> mockMultimediaFiles = new ArrayList<File>();
 	private List<File> mockThumnailFiles = new ArrayList<File>();
-	private RuntimeException mockException = new RuntimeException("error ");
+	private RuntimeException mockException = new RuntimeException("error");
 
 	private TranscodingService trancdoingService;
 
@@ -170,7 +170,7 @@ public class TransCodingServiceTest {
 		try {
 			trancdoingService.transcode(jobId);
 			fail("발생해야함.");
-		} catch (Exception e) {
+		} catch (RuntimeException e) {
 			// TODO: handle exception
 			assertSame(mockException, e);
 		}

@@ -34,9 +34,10 @@ public class TranscodingServiceImpl implements TranscodingService{
 		// TODO Auto-generated method stub
 		try {
 			job.transcode(transcoder, thumnailExtractor);
-		} catch (Exception e) {
+		} catch (RuntimeException e) {
 			// TODO: handle exception
 			logger.error("fail to do transcoding job {}", job.getId(), e);
+			throw e;
 		}
 	}
 

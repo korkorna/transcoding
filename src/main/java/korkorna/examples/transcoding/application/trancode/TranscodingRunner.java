@@ -1,35 +1,42 @@
 package korkorna.examples.transcoding.application.trancode;
 
-import korkorna.examples.transcoding.domain.job.Job;
-import korkorna.examples.transcoding.domain.job.JobRepository;
-
 public class TranscodingRunner {
 	private TranscodingService transcodingService;
-	private JobRepository jobRepository;
+	private JobQueue jobQueue;
 
-	public TranscodingRunner(TranscodingService transcodingService, JobRepository jobRepository) {
+	public TranscodingRunner(TranscodingService transcodingService, JobQueue jobQueue) {
 		super();
 		this.transcodingService = transcodingService;
-		this.jobRepository = jobRepository;
+		this.jobQueue = jobQueue;
 	}
 
 	public void run() {
 		// TODO Auto-generated method stub
-		Job job = getNextJob();
-		runTranscoding(job);
+		while(true) {
+			Long jobId = null;
+			try {
+				jobId = getNextWaitingJob();
+			} catch (JobQueue.ClosedException e) {
+				// TODO: handle exception
+				break;
+			}
+			runTranscoding(jobId);
+		}
 	}
 
-	private void runTranscoding(Job job) {
+	private void runTranscoding(Long jobId) {
 		// TODO Auto-generated method stub
-		if (job == null)
-			return;
-		
-		transcodingService.transcode(job.getId());
+		try {
+			transcodingService.transcode(jobId);
+		} catch (RuntimeException e) {
+			// TODO: handle exception
+		}
 	}
 
-	private Job getNextJob() {
+	private Long getNextWaitingJob() {
 		// TODO Auto-generated method stub
-		return jobRepository.findEldestJobOfCreatedState();
+		return jobQueue.nextJobId();
 	}
-
+	
+	public void stop() {}
 }

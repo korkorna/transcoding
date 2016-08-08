@@ -26,7 +26,7 @@ public class Job {
 		this.destinationStorage = destinationStorage;
 		this.callback = callback;
 		this.outputFormats = outputFormats;
-		state = Job.State.CREATED;
+		state = Job.State.WAITING;
 	}
 
 	public Job(MediaSourceFile mediaSourceFile, DestinationStorage destinationStorage,
